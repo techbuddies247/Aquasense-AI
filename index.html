@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaSense AI — Water Quality Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --paper:    #f5f0e8;
+  --paper2:   #ede7d9;
+  --paper3:   #e4dccb;
+  --ink:      #1a1a2e;
+  --ink2:     #2d2d44;
+  --ink3:     #474761;
+  --muted:    #8a8698;
+  --rule:     #d4cbbf;
+  --rule2:    #c5b9a8;
+  --teal:     #0d7377;
+  --teal-lt:  #e8f4f4;
+  --teal-md:  #b3d9da;
+  --rust:     #c0392b;
+  --rust-lt:  #fdf0ee;
+  --rust-md:  #f5c0ba;
+  --amber:    #d4861a;
+  --amber-lt: #fdf6e8;
+  --amber-md: #f5dca8;
+  --safe:     #1a6b3c;
+  --safe-lt:  #eaf5ee;
+  --safe-md:  #a8d8b8;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-body:  'DM Sans', sans-serif;
+  --font-mono:  'DM Mono', monospace;
+  --radius: 4px;
+  --radius-lg: 8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* paper texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 1100px; width: 100%; margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+.brand { display: flex; flex-direction: column; gap: 4px; }
+.brand-mark {
+  display: flex; align-items: center; gap: 14px;
+}
+.brand-drop {
+  width: 44px; height: 44px;
+  background: var(--teal);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-drop span {
+  display: block; font-size: 18px;
+  transform: rotate(45deg);
+}
+.brand-name {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.brand-name span { color: var(--teal); }
+.brand-sub {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding-left: 58px;
+}
+.header-meta {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  padding-top: 4px;
+}
+.header-tag {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.htag-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--safe); animation: pulse 2.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.header-date {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::before { display: none; }
+
+/* ── INPUT CARD ── */
+.input-card {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: clamp(20px, 3vw, 36px);
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(26,26,46,0.06), 0 4px 16px rgba(26,26,46,0.04);
+  animation: fadeUp 0.5s ease 0.1s both;
+  position: relative;
+}
+.input-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--teal);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── ESP32 LIVE BAR ── */
+.live-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--paper2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  font-size: 0.8rem;
+}
+.live-bar.connected {
+  background: var(--teal-lt);
+  border-color: var(--teal-md);
+}
+.live-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+}
+.live-pulse.on { background: var(--safe); animation: pulse 1.5s infinite; }
+.live-status { font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.live-status.on { color: var(--teal); }
+.live-readings { display: flex; gap: 8px; flex-wrap: wrap; }
+.live-val-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid var(--teal-md);
+  border-radius: var(--radius);
+  font-family: var(--font-mono); font-size: 0.68rem;
+}
+.live-val-chip.updated { animation: chipFlash 0.5s ease; }
+@keyframes chipFlash { 0%{background:var(--safe-lt);border-color:var(--safe)} 100%{background:white;border-color:var(--teal-md)} }
+.lvc-label { color: var(--muted); font-size: 0.58rem; letter-spacing: 1px; }
+.lvc-val { color: var(--teal); font-weight: 500; }
+.live-controls { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.btn-connect {
+  padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--teal);
+  background: var(--teal); color: white;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 1.5px;
+  cursor: pointer; transition: all 0.2s; font-weight: 500;
+}
+.btn-connect:hover { background: var(--ink); border-color: var(--ink); }
+.btn-connect.disconnect { background: var(--rust); border-color: var(--rust); }
+.btn-connect.disconnect:hover { background: #a93226; border-color: #a93226; }
+.btn-secondary {
+  padding: 6px 14px; border-radius: var(--radius);
+  border: 1px solid var(--rule2); background: white; color: var(--ink3);
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 1px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+.btn-secondary.on { border-color: var(--safe); color: var(--safe); background: var(--safe-lt); }
+.btn-lock-active { border-color: var(--safe) !important; color: var(--safe) !important; background: var(--safe-lt) !important; }
+.live-ip-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--paper2); border: 1px solid var(--rule);
+  border-radius: var(--radius); margin-bottom: 12px;
+}
+.live-ip-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
+.live-ip-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--ink); font-family: var(--font-mono); font-size: 0.7rem;
+}
+.live-log {
+  display: none; font-family: var(--font-mono); font-size: 0.6rem;
+  color: var(--muted); line-height: 1.8; margin-top: 6px;
+  max-height: 72px; overflow-y: auto;
+}
+.live-log.on { display: block; }
+.log-line.ok { color: var(--safe); }
+.log-line.err { color: var(--rust); }
+.log-line.info { color: var(--teal); }
+.last-update { font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); margin-left: auto; }
+
+/* ── SENSOR FIELDS ── */
+.sensor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media(max-width:580px){ .sensor-row{grid-template-columns:1fr;} }
+
+.sensor-box {
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 18px 20px 14px; background: var(--paper);
+  cursor: text; transition: border-color 0.2s;
+  position: relative;
+}
+.sensor-box:focus-within { border-color: var(--teal); background: white; }
+.sensor-box.ph:focus-within::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: var(--teal); border-radius: 0 0 var(--radius) var(--radius);
+}
+.sensor-box.tds:focus-within::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: var(--amber); border-radius: 0 0 var(--radius) var(--radius);
+}
+.sensor-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.sensor-name { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.sensor-range {
+  font-family: var(--font-mono); font-size: 0.58rem; padding: 2px 7px;
+  border-radius: 3px; border: 1px solid var(--rule2); color: var(--muted); background: var(--paper2);
+}
+.sensor-field {
+  width: 100%; background: transparent; border: none; outline: none;
+  font-family: var(--font-serif); font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700;
+  color: var(--ink); line-height: 1; padding: 4px 0;
+}
+.sensor-field::placeholder { color: var(--rule2); font-weight: 700; }
+.sensor-unit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.sensor-unit { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
+.sensor-hint-chip { font-size: 0.58rem; padding: 2px 8px; border-radius: 3px; font-family: var(--font-mono); }
+.chip-safe { background: var(--safe-lt); color: var(--safe); border: 1px solid var(--safe-md); }
+.chip-warn { background: var(--amber-lt); color: var(--amber); border: 1px solid var(--amber-md); }
+
+/* ── SOURCE PILLS ── */
+.source-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.pill {
+  padding: 7px 14px; border-radius: 30px; cursor: pointer;
+  font-size: 0.75rem; font-weight: 500;
+  border: 1px solid var(--rule2); background: white; color: var(--ink3);
+  transition: all 0.15s; user-select: none;
+}
+.pill:hover { border-color: var(--teal); color: var(--teal); }
+.pill.on { background: var(--teal); border-color: var(--teal); color: white; font-weight: 600; }
+
+/* ── PRESETS ── */
+.presets-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+.preset-btn {
+  padding: 5px 12px; border-radius: var(--radius); cursor: pointer;
+  font-size: 0.7rem; font-family: var(--font-mono); letter-spacing: 0.5px;
+  border: 1px solid var(--rule); background: white; color: var(--muted);
+  transition: all 0.15s;
+}
+.preset-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-lt); }
+
+/* ── SCALE SECTION ── */
+.scale-section { margin-bottom: 24px; }
+.scale-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:480px){ .scale-cards{grid-template-columns:1fr;} }
+.scale-card {
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px 18px;
+  background: white; cursor: pointer; transition: all 0.2s; position: relative;
+}
+.scale-card:hover { border-color: var(--teal); }
+.scale-card.on.large { border-color: var(--teal); background: var(--teal-lt); }
+.scale-card.on.small { border-color: var(--safe); background: var(--safe-lt); }
+.sc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.sc-icon { font-size: 1.5rem; }
+.sc-radio {
+  width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--rule2);
+  position: relative; transition: all 0.2s; flex-shrink: 0;
+}
+.scale-card.on.large .sc-radio { border-color: var(--teal); background: var(--teal); }
+.scale-card.on.small .sc-radio { border-color: var(--safe); background: var(--safe); }
+.sc-radio::after {
+  content:''; position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%) scale(0);
+  width: 5px; height: 5px; border-radius: 50%; background: white;
+  transition: transform 0.15s;
+}
+.scale-card.on .sc-radio::after { transform: translate(-50%,-50%) scale(1); }
+.sc-title { font-weight: 600; font-size: 0.9rem; color: var(--ink); margin-bottom: 3px; }
+.sc-sub { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; }
+.sc-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.sc-tag {
+  font-family: var(--font-mono); font-size: 0.55rem; padding: 2px 7px;
+  border-radius: 3px; letter-spacing: 0.5px;
+}
+.sc-tag.teal { background: var(--teal-lt); color: var(--teal); border: 1px solid var(--teal-md); }
+.sc-tag.green { background: var(--safe-lt); color: var(--safe); border: 1px solid var(--safe-md); }
+.sc-tag.amber { background: var(--amber-lt); color: var(--amber); border: 1px solid var(--amber-md); }
+
+/* ── API KEY ── */
+.api-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--paper2); border: 1px solid var(--rule);
+  border-radius: var(--radius); margin-bottom: 14px;
+}
+.api-key-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--ink); font-family: var(--font-mono); font-size: 0.7rem;
+}
+
+/* ── ANALYZE BUTTON ── */
+.btn-analyze {
+  width: 100%; padding: 18px; border: none; cursor: pointer;
+  border-radius: var(--radius);
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 800;
+  letter-spacing: 1px; color: white;
+  background: var(--ink);
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.btn-analyze::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  transform: translateX(-100%); animation: shimmer 2s infinite;
+}
+@keyframes shimmer { to{transform:translateX(200%)} }
+.btn-analyze:hover:not(:disabled) { background: var(--teal); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(13,115,119,0.35); }
+.btn-analyze:active { transform: translateY(0); }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── RESULTS ── */
+#results { display: none; }
+#results.on { display: block; }
+
+/* ── DIVIDER ── */
+.divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 32px 0; color: var(--muted);
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 2px;
+}
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--rule); }
+
+/* ── GAUGES ── */
+.gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media(max-width:580px){ .gauge-row{grid-template-columns:1fr;} }
+
+.gauge-card {
+  background: white; border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: clamp(16px,2vw,28px);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+}
+.gauge-card:nth-child(2){ animation-delay:0.06s; }
+.gc-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 16px; }
+.gc-ring { position: relative; width: 130px; height: 130px; margin-bottom: 12px; }
+.gc-ring svg { width: 130px; height: 130px; transform: rotate(-90deg); }
+.gc-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.gc-value { font-family: var(--font-serif); font-size: 2rem; font-weight: 800; line-height: 1; }
+.gc-unit { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); margin-top: 2px; }
+.gc-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 30px;
+  font-size: 0.68rem; font-family: var(--font-mono); letter-spacing: 1px;
+}
+.s-safe { background: var(--safe-lt); color: var(--safe); border: 1px solid var(--safe-md); }
+.s-mild { background: var(--amber-lt); color: var(--amber); border: 1px solid var(--amber-md); }
+.s-poor { background: var(--rust-lt); color: var(--rust); border: 1px solid var(--rust-md); }
+.s-crit { background: var(--rust-lt); color: var(--rust); border: 1px solid var(--rust-md); }
+
+/* ── WQI BAR ── */
+.wqi-bar-card {
+  background: white; border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: clamp(16px,2vw,28px);
+  margin-bottom: 20px; animation: fadeUp 0.4s ease 0.1s both;
+}
+.wqi-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.wqi-score-box { min-width: 80px; }
+.wqi-num { font-family: var(--font-serif); font-size: clamp(2.4rem,5vw,3.8rem); font-weight: 900; line-height: 1; }
+.wqi-label { font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 2px; margin-top: 2px; }
+.wqi-track-wrap { flex: 1; min-width: 200px; }
+.wqi-track-label { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); margin-bottom: 8px; }
+.wqi-track {
+  height: 8px; border-radius: 8px; position: relative;
+  background: linear-gradient(90deg, var(--rust) 0%, var(--amber) 40%, #90c77d 70%, var(--safe) 100%);
+  overflow: visible;
+}
+.wqi-needle {
+  position: absolute; top: 50%; transform: translate(-50%,-50%);
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; border: 3px solid var(--ink);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: left 1.2s cubic-bezier(.16,1,.3,1);
+  z-index: 2;
+}
+.wqi-verdict { font-size: 0.82rem; font-weight: 500; margin-top: 10px; line-height: 1.5; }
+
+/* ── VERDICT CARD ── */
+.verdict-card {
+  border-radius: var(--radius-lg); padding: clamp(16px,2.5vw,28px);
+  margin-bottom: 20px; border: 1px solid var(--rule);
+  animation: fadeUp 0.4s ease both;
+}
+.verdict-card.vc-safe   { background: var(--safe-lt);  border-color: var(--safe-md); }
+.verdict-card.vc-warn   { background: var(--amber-lt); border-color: var(--amber-md); }
+.verdict-card.vc-danger { background: var(--rust-lt);  border-color: var(--rust-md); }
+.verdict-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.verdict-icon { font-size: 2.4rem; line-height: 1; }
+.verdict-headline { font-family: var(--font-serif); font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+.verdict-sub { font-size: 0.82rem; color: var(--ink3); line-height: 1.5; }
+.verdict-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:480px){ .verdict-meters{grid-template-columns:1fr;} }
+.vm-item { background: rgba(255,255,255,0.6); border-radius: var(--radius); padding: 12px 14px; }
+.vm-label { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.vm-bar-track { height: 5px; border-radius: 5px; background: rgba(0,0,0,0.08); overflow: hidden; }
+.vm-bar-fill { height: 100%; border-radius: 5px; transition: width 1.2s cubic-bezier(.16,1,.3,1); }
+.vm-val { font-weight: 600; font-size: 0.82rem; margin-top: 5px; }
+
+/* ── COST CARD ── */
+.cost-card {
+  background: white; border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: clamp(16px,2.5vw,28px); margin-bottom: 20px;
+  animation: fadeUp 0.4s ease 0.1s both;
+}
+.cost-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap: 10px; margin-bottom: 16px; }
+.cost-tile {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: var(--radius); padding: 16px; text-align: center; transition: all 0.15s;
+}
+.cost-tile:hover { border-color: var(--teal); background: var(--teal-lt); }
+.cost-tile-icon { font-size: 1.4rem; margin-bottom: 6px; }
+.cost-tile-val { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 800; color: var(--teal); line-height: 1; }
+.cost-tile-label { font-family: var(--font-mono); font-size: 0.56rem; color: var(--muted); letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
+.cost-vol-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cost-vol-input {
+  flex: 1; min-width: 120px; background: var(--paper); border: 1px solid var(--rule);
+  border-radius: var(--radius); padding: 9px 12px; color: var(--ink);
+  font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700; outline: none;
+  transition: border-color 0.15s;
+}
+.cost-vol-input:focus { border-color: var(--teal); }
+.cost-calc-btn {
+  padding: 9px 18px; border-radius: var(--radius); border: 1px solid var(--teal);
+  background: var(--teal); color: white;
+  font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s;
+}
+.cost-calc-btn:hover { background: var(--ink); border-color: var(--ink); }
+.cost-result {
+  display: none; margin-top: 14px; padding: 12px 14px;
+  background: var(--teal-lt); border: 1px solid var(--teal-md);
+  border-radius: var(--radius); font-size: 0.82rem; line-height: 1.8;
+}
+.cost-result.on { display: block; }
+
+/* ── SCAN HISTORY ── */
+.history-card {
+  background: white; border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: clamp(16px,2.5vw,28px); margin-bottom: 20px;
+}
+.history-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.hist-count { font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted); letter-spacing: 1px; }
+.hist-clear-btn {
+  padding: 4px 10px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: white; color: var(--muted);
+  font-family: var(--font-mono); font-size: 0.6rem; cursor: pointer; transition: all 0.15s;
+}
+.hist-clear-btn:hover { border-color: var(--rust); color: var(--rust); }
+.history-empty { text-align: center; padding: 28px; font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; }
+.history-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.history-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--paper);
+  cursor: pointer; transition: all 0.15s;
+}
+.history-item:hover { border-color: var(--teal); background: var(--teal-lt); }
+.hi-num { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); min-width: 22px; }
+.hi-source { font-size: 0.8rem; font-weight: 500; flex: 1; }
+.hi-vals { display: flex; gap: 6px; }
+.hi-val { font-family: var(--font-mono); font-size: 0.62rem; padding: 2px 7px; border-radius: 3px; }
+.hi-ph-good  { background: var(--safe-lt);  color: var(--safe); }
+.hi-ph-warn  { background: var(--amber-lt); color: var(--amber); }
+.hi-ph-bad   { background: var(--rust-lt);  color: var(--rust); }
+.hi-tds-good { background: var(--teal-lt);  color: var(--teal); }
+.hi-tds-warn { background: var(--amber-lt); color: var(--amber); }
+.hi-tds-bad  { background: var(--rust-lt);  color: var(--rust); }
+.hi-time { font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); white-space: nowrap; }
+
+/* ── AI CARD ── */
+.ai-card {
+  background: white; border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: clamp(20px,3vw,36px);
+  animation: fadeUp 0.4s ease 0.15s both;
+  position: relative;
+}
+.ai-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--teal);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.ai-header {
+  display: flex; align-items: center; gap: 14px;
+  padding-bottom: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 24px;
+}
+.ai-orb {
+  width: 40px; height: 40px; border-radius: var(--radius);
+  background: var(--ink); display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.ai-title { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 800; color: var(--ink); }
+.ai-sub { font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 2px; margin-top: 2px; }
+.ai-dots { display: flex; gap: 5px; margin-left: auto; }
+.ai-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--teal);
+  animation: bounce 1.2s infinite;
+}
+.ai-dot:nth-child(2){ animation-delay:0.2s; }
+.ai-dot:nth-child(3){ animation-delay:0.4s; }
+@keyframes bounce { 0%,80%,100%{transform:scale(1);opacity:0.4} 40%{transform:scale(1.4);opacity:1} }
+
+/* ── AI OUTPUT ── */
+.out-block {
+  margin-bottom: 28px; padding-bottom: 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.out-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.out-title {
+  font-family: var(--font-serif); font-size: 1rem; font-weight: 800; color: var(--ink);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.ot-icon { font-size: 1rem; }
+.assessment-text { font-size: 0.88rem; line-height: 1.85; color: var(--ink3); }
+.hl-good { color: var(--safe); font-weight: 600; }
+.hl-warn { color: var(--amber); font-weight: 600; }
+.hl-bad  { color: var(--rust); font-weight: 600; }
+
+.alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; border-radius: var(--radius);
+  margin-bottom: 20px; font-size: 0.85rem; line-height: 1.6;
+}
+.alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.a-good { background: var(--safe-lt);  border: 1px solid var(--safe-md);  color: var(--safe); }
+.a-warn { background: var(--amber-lt); border: 1px solid var(--amber-md); color: #7a5200; }
+.a-bad  { background: var(--rust-lt);  border: 1px solid var(--rust-md);  color: var(--rust); }
+
+.step-list { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 16px; background: var(--paper); border: 1px solid var(--rule);
+  border-radius: var(--radius); transition: border-color 0.15s;
+}
+.step:hover { border-color: var(--teal); }
+.step-badge {
+  width: 28px; height: 28px; border-radius: var(--radius); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 500; color: white;
+}
+.sb1,.sb2 { background: var(--rust); }
+.sb3,.sb4 { background: var(--amber); }
+.sb5,.sb6 { background: var(--safe); }
+.step-info { flex: 1; }
+.step-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.step-tag { font-family: var(--font-mono); font-size: 0.55rem; padding: 2px 7px; border-radius: 3px; letter-spacing: 1px; }
+.t-chem { background: var(--rust-lt);  color: var(--rust);  border: 1px solid var(--rust-md); }
+.t-phys { background: var(--teal-lt);  color: var(--teal);  border: 1px solid var(--teal-md); }
+.t-bio  { background: var(--safe-lt);  color: var(--safe);  border: 1px solid var(--safe-md); }
+.t-elec { background: var(--amber-lt); color: var(--amber); border: 1px solid var(--amber-md); }
+.step-desc { font-size: 0.8rem; color: var(--ink3); line-height: 1.65; }
+
+.uc-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 10px; }
+.uc-tile {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px; background: var(--paper); border: 1px solid var(--rule);
+  border-radius: var(--radius); transition: all 0.15s;
+}
+.uc-tile:hover { border-color: var(--teal); background: var(--teal-lt); }
+.uc-emoji { font-size: 1.3rem; line-height: 1; flex-shrink: 0; }
+.uc-text strong { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 2px; }
+.uc-text span { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead tr { border-bottom: 2px solid var(--ink); }
+thead th { padding: 8px 12px; text-align: left; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tbody tr { border-bottom: 1px solid var(--rule); }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: 10px 12px; }
+.tv-good { color: var(--safe);  font-weight: 700; }
+.tv-warn { color: var(--amber); font-weight: 700; }
+.tv-bad  { color: var(--rust);  font-weight: 700; }
+.insight { font-size: 0.85rem; line-height: 1.9; color: var(--ink3); }
+.insight strong { color: var(--ink); }
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 64px; padding-top: 28px;
+  border-top: 2px solid var(--rule);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+}
+.footer-left { display: flex; flex-direction: column; gap: 4px; }
+.footer-brand { font-family: var(--font-serif); font-size: 1rem; font-weight: 800; color: var(--ink); }
+.footer-brand span { color: var(--teal); }
+.footer-copy { font-family: var(--font-mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 1px; }
+.footer-right { display: flex; gap: 8px; flex-wrap: wrap; }
+.ftag {
+  padding: 4px 10px; border-radius: 3px;
+  background: var(--paper2); border: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 0.58px; font-size: 0.58rem; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--paper2); }
+::-webkit-scrollbar-thumb { background: var(--rule2); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-drop"><span>💧</span></div>
+        <div class="brand-name">Aqua<span>Sense</span> AI</div>
+      </div>
+      <div class="brand-sub">Intelligent Water Quality Analysis System</div>
+    </div>
+    <div class="header-meta">
+      <div class="header-tag">
+        <div class="htag-dot"></div>
+        System Operational
+      </div>
+      <div class="header-date" id="hdate"></div>
+      <div class="header-tag" style="color:var(--teal)">Arduino · pH Sensor · TDS Module</div>
+    </div>
+  </header>
+
+  <!-- INPUT CARD -->
+  <div class="input-card">
+
+    <!-- ESP32 LIVE BAR -->
+    <div class="live-bar" id="live-bar">
+      <div class="live-pulse" id="live-pulse"></div>
+      <span class="live-status" id="live-status">ESP32 NOT CONNECTED</span>
+      <div class="live-readings" id="live-readings" style="display:none;">
+        <div class="live-val-chip" id="chip-ph">
+          <span class="lvc-label">PH</span>
+          <span class="lvc-val" id="live-ph-val">—</span>
+        </div>
+        <div class="live-val-chip" id="chip-tds">
+          <span class="lvc-label">TDS</span>
+          <span class="lvc-val" id="live-tds-val">— ppm</span>
+        </div>
+        <div class="live-val-chip">
+          <span class="lvc-label">AT</span>
+          <span class="lvc-val" id="live-time-val">—</span>
+        </div>
+      </div>
+      <div class="last-update" id="last-update"></div>
+      <div class="live-controls">
+        <button class="btn-secondary" id="btn-auto" onclick="toggleAutoAnalyze()">⚡ Auto: <span id="auto-label">OFF</span></button>
+        <button class="btn-secondary" id="btn-lock" onclick="toggleLock()">🔓 Lock Values</button>
+        <button class="btn-connect" id="btn-connect" onclick="toggleConnect()">Connect ESP32</button>
+      </div>
+    </div>
+
+    <div class="live-ip-row">
+      <span class="live-ip-label">Bridge URL:</span>
+      <input class="live-ip-input" id="bridge-url" value="http://localhost:5050" placeholder="http://localhost:5050">
+    </div>
+    <div class="live-log" id="live-log"></div>
+
+    <div id="manual-sensor-row">
+      <div class="sec-label">Sensor Readings</div>
+      <div class="sensor-row">
+        <div class="sensor-box ph" onclick="this.querySelector('input').focus()">
+          <div class="sensor-meta">
+            <div class="sensor-name">pH Value</div>
+            <div class="sensor-range">Scale 0 – 14</div>
+          </div>
+          <input class="sensor-field" id="ph" type="number" step="0.01" min="0" max="14" placeholder="7.0">
+          <div class="sensor-unit-row">
+            <div class="sensor-unit">pH units</div>
+            <div class="sensor-hint-chip chip-safe">Safe: 6.5 – 8.5</div>
+          </div>
+        </div>
+        <div class="sensor-box tds" onclick="this.querySelector('input').focus()">
+          <div class="sensor-meta">
+            <div class="sensor-name">TDS Value</div>
+            <div class="sensor-range">Parts Per Million</div>
+          </div>
+          <input class="sensor-field" id="tds" type="number" step="1" min="0" placeholder="350">
+          <div class="sensor-unit-row">
+            <div class="sensor-unit">ppm</div>
+            <div class="sensor-hint-chip chip-warn">WHO limit: 500 ppm</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-label">Water Source</div>
+      <div class="source-row" id="sources">
+        <div class="pill on" onclick="pick(this,'Pond Water')">🌿 Pond</div>
+        <div class="pill" onclick="pick(this,'River Water')">🏞️ River</div>
+        <div class="pill" onclick="pick(this,'Borewell / Groundwater')">⛏️ Borewell</div>
+        <div class="pill" onclick="pick(this,'Tap / Municipal Water')">🚿 Tap</div>
+        <div class="pill" onclick="pick(this,'Lake Water')">🏔️ Lake</div>
+        <div class="pill" onclick="pick(this,'Industrial Runoff')">🏭 Industrial</div>
+        <div class="pill" onclick="pick(this,'Rainwater / Harvested Water')">🌧️ Rain</div>
+      </div>
+    </div>
+
+    <div id="manual-hint" style="display:none;align-items:center;gap:10px;padding:9px 14px;border-radius:4px;background:var(--teal-lt);border:1px solid var(--teal-md);margin-bottom:14px;font-family:var(--font-mono);font-size:0.65rem;color:var(--teal);letter-spacing:1px;">
+      📡 VALUES LOCKED — LIVE FROM ESP32 · Manual input disabled
+    </div>
+
+    <div class="sec-label">Quick Presets</div>
+    <div class="presets-row">
+      <button class="preset-btn" onclick="preset(7.8,680,'Pond Water','🌿 Pond')">🌿 Pond</button>
+      <button class="preset-btn" onclick="preset(6.9,310,'River Water','🏞️ River')">🏞️ River</button>
+      <button class="preset-btn" onclick="preset(8.3,940,'Borewell / Groundwater','⛏️ Borewell')">⛏️ Borewell</button>
+      <button class="preset-btn" onclick="preset(7.1,195,'Tap / Municipal Water','🚿 Tap')">🚿 Tap</button>
+      <button class="preset-btn" onclick="preset(4.2,1850,'Industrial Runoff','🏭 Industrial')">🏭 Industrial</button>
+    </div>
+
+    <div class="sec-label">Analysis Scale</div>
+    <div class="scale-section">
+      <div class="scale-cards">
+        <div class="scale-card large on" id="sc-large" onclick="pickScale('large')">
+          <div class="sc-top"><div class="sc-icon">🏭</div><div class="sc-radio"></div></div>
+          <div class="sc-title">Large Scale</div>
+          <div class="sc-sub">1,000 L and above</div>
+          <div class="sc-tags">
+            <span class="sc-tag teal">Agricultural</span>
+            <span class="sc-tag teal">Municipal</span>
+            <span class="sc-tag amber">Industrial</span>
+          </div>
+        </div>
+        <div class="scale-card small" id="sc-small" onclick="pickScale('small')">
+          <div class="sc-top"><div class="sc-icon">🚰</div><div class="sc-radio"></div></div>
+          <div class="sc-title">Small Scale</div>
+          <div class="sc-sub">Under 1,000 L</div>
+          <div class="sc-tags">
+            <span class="sc-tag green">Household</span>
+            <span class="sc-tag green">Drinking</span>
+            <span class="sc-tag amber">Lab / Research</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="api-row">
+      <span class="live-ip-label">🔑 API KEY</span>
+      <input type="password" id="apikey" class="api-key-input" placeholder="sk-ant-api03-..."
+        oninput="window._AQ_KEY=this.value;try{localStorage.setItem('aqk',this.value)}catch(e){};const v=this.value.startsWith('sk-ant-')&&this.value.length>20;document.getElementById('kstat').textContent=v?'✅ Set':'⚠️ Check';document.getElementById('kstat').style.color=v?'var(--safe)':'var(--amber)';">
+      <span id="kstat" style="font-family:var(--font-mono);font-size:0.58rem;color:var(--muted);white-space:nowrap;">Not set</span>
+    </div>
+
+    <button class="btn-analyze" id="abtn" onclick="go()">Run Water Analysis</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="divider">Analysis Results</div>
+
+    <div id="verdict-card" class="verdict-card" style="display:none;"></div>
+
+    <div class="gauge-row" id="gauges"></div>
+
+    <div class="wqi-bar-card" id="wqicard"></div>
+
+    <div class="cost-card" id="costcard" style="display:none;">
+      <div class="sec-label" style="margin-bottom:18px;">Treatment Cost Estimator</div>
+      <div class="cost-grid" id="cost-tiles"></div>
+      <div class="cost-vol-row">
+        <input class="cost-vol-input" id="cost-vol" type="number" placeholder="1000" value="1000" min="1">
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);">Litres</span>
+        <button class="cost-calc-btn" onclick="calcCost()">Calculate ₹</button>
+      </div>
+      <div class="cost-result" id="cost-result"></div>
+    </div>
+
+    <div class="history-card">
+      <div class="history-actions">
+        <div class="sec-label" style="margin-bottom:0;">Scan History</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="hist-count" id="hist-count">0 scans</span>
+          <button class="hist-clear-btn" onclick="clearHistory()">Clear</button>
+        </div>
+      </div>
+      <div id="history-list">
+        <div class="history-empty">No scans yet — run your first analysis above ↑</div>
+      </div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-header">
+        <div class="ai-orb">🧠</div>
+        <div>
+          <div class="ai-title">AquaSense Intelligence Engine</div>
+          <div class="ai-sub">Multi-Parameter Water Chemistry Analysis</div>
+        </div>
+        <div class="ai-dots" id="dots" style="display:none;">
+          <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
+        </div>
+      </div>
+      <div class="ai-body" id="aout"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-left">
+      <div class="footer-brand">Aqua<span>Sense</span> AI</div>
+      <div class="footer-copy">Smart Water Intelligence · pH & TDS Analysis · Arduino + Claude AI</div>
+    </div>
+    <div class="footer-right">
+      <span class="ftag">Arduino Uno</span>
+      <span class="ftag">pH Electrode</span>
+      <span class="ftag">TDS Module</span>
+      <span class="ftag">Claude AI</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// Set header date
+document.getElementById('hdate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'long',year:'numeric'});
+
+let source = 'Pond Water';
+let scale = 'large';
+let scanHistory = [];
+let liveInterval   = null;
+let autoAnalyze    = false;
+let isConnected    = false;
+let lastLivePH     = null;
+let lastLiveTDS    = null;
+let logLines       = [];
+let valuesLocked   = false;
+let stableDebounceTimer = null;
+let isAnalyzing    = false;
+const PH_THRESHOLD  = 0.05;
+const TDS_THRESHOLD = 5;
+
+function toggleConnect() { isConnected ? stopLive() : startLive(); }
+
+function startLive() {
+  const url = document.getElementById('bridge-url').value.trim();
+  if (!url) { addLog('No bridge URL set', 'err'); return; }
+  addLog('Connecting to ' + url + '...', 'info');
+  document.getElementById('btn-connect').textContent = 'Connecting...';
+  fetchLive(url, true);
+  liveInterval = setInterval(() => fetchLive(url, false), 2000);
+}
+
+function stopLive() {
+  clearInterval(liveInterval);
+  clearTimeout(stableDebounceTimer);
+  liveInterval = null; isConnected = false; autoAnalyze = false;
+  setLiveUI(false, null, null);
+  document.getElementById('btn-connect').textContent = 'Connect ESP32';
+  document.getElementById('btn-connect').classList.remove('disconnect');
+  document.getElementById('btn-auto').classList.remove('on');
+  document.getElementById('auto-label').textContent = 'OFF';
+  addLog('Disconnected', 'err');
+}
+
+async function fetchLive(url, isFirst) {
+  try {
+    const res = await fetch(url + '/latest', { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if (d.ph !== null && d.tds !== null) {
+      const phVal  = parseFloat(parseFloat(d.ph).toFixed(2));
+      const tdsVal = Math.round(parseFloat(d.tds));
+      const phChanged  = lastLivePH  === null || Math.abs(phVal  - lastLivePH)  >= PH_THRESHOLD;
+      const tdsChanged = lastLiveTDS === null || Math.abs(tdsVal - lastLiveTDS) >= TDS_THRESHOLD;
+      setLiveUI(true, phVal, tdsVal, d.timestamp);
+      if (phChanged)  flashChip('chip-ph');
+      if (tdsChanged) flashChip('chip-tds');
+      if (!valuesLocked) {
+        document.getElementById('ph').value  = phVal;
+        document.getElementById('tds').value = tdsVal;
+        if (phChanged) { const f=document.getElementById('ph'); f.style.color='var(--safe)'; setTimeout(()=>{f.style.color='';},1500); }
+        if (tdsChanged){ const f=document.getElementById('tds'); f.style.color='var(--teal)'; setTimeout(()=>{f.style.color='';},1500); }
+      }
+      if (autoAnalyze && (phChanged || tdsChanged) && !isAnalyzing) {
+        clearTimeout(stableDebounceTimer);
+        addLog('Values changing — waiting for stability...', 'info');
+        stableDebounceTimer = setTimeout(() => {
+          const curPH  = parseFloat(document.getElementById('ph').value);
+          const curTDS = parseFloat(document.getElementById('tds').value);
+          if (Math.abs(curPH-phVal)<PH_THRESHOLD && Math.abs(curTDS-tdsVal)<TDS_THRESHOLD && !isAnalyzing) {
+            addLog('Stable → auto-analyzing pH='+phVal+' TDS='+tdsVal, 'ok');
+            go();
+          }
+        }, 5000);
+      }
+      if (isFirst || phChanged || tdsChanged) {
+        addLog('📡 ' + (d.timestamp||'now') + '  pH=' + phVal + '  TDS=' + tdsVal + ' ppm', 'ok');
+        const abtn = document.getElementById('abtn');
+        if (abtn && !autoAnalyze && !isAnalyzing) {
+          abtn.style.background = 'var(--teal)';
+          abtn.textContent = '📡 New ESP32 Data — Click to Analyse';
+          setTimeout(() => { abtn.style.background=''; abtn.textContent='Run Water Analysis'; }, 3000);
+        }
+      }
+      lastLivePH = phVal; lastLiveTDS = tdsVal;
+      if (!isConnected) {
+        isConnected = true;
+        document.getElementById('btn-connect').textContent = 'Disconnect';
+        document.getElementById('btn-connect').classList.add('disconnect');
+        addLog('ESP32 bridge connected!', 'ok');
+      }
+      document.getElementById('last-update').textContent = '⟳ ' + new Date().toLocaleTimeString();
+    } else {
+      if (isFirst) addLog('Bridge running — waiting for ESP32 data...', 'info');
+      if (!isConnected) {
+        isConnected = true;
+        document.getElementById('btn-connect').textContent = 'Disconnect';
+        document.getElementById('btn-connect').classList.add('disconnect');
+        document.getElementById('live-readings').style.display = 'flex';
+      }
+    }
+  } catch (e) {
+    if (isFirst) {
+      addLog('Cannot reach bridge: ' + e.message, 'err');
+      document.getElementById('btn-connect').textContent = 'Connect ESP32';
+      clearInterval(liveInterval); isConnected = false; setLiveUI(false, null, null);
+    }
+  }
+}
+
+function setLiveUI(connected, ph, tds, ts) {
+  const bar=document.getElementById('live-bar'), pulse=document.getElementById('live-pulse');
+  const status=document.getElementById('live-status'), reads=document.getElementById('live-readings');
+  const manualRow=document.getElementById('manual-sensor-row'), manualHint=document.getElementById('manual-hint');
+  if (connected && ph !== null) {
+    bar.className='live-bar connected'; pulse.className='live-pulse on';
+    status.className='live-status on'; status.textContent='ESP32 Live · Streaming';
+    reads.style.display='flex';
+    document.getElementById('live-ph-val').textContent  = ph;
+    document.getElementById('live-tds-val').textContent = tds + ' ppm';
+    document.getElementById('live-time-val').textContent = ts || '—';
+    if (manualRow) { manualRow.style.opacity='1'; manualRow.style.pointerEvents='none'; }
+    if (manualHint) manualHint.style.display='flex';
+  } else if (connected) {
+    bar.className='live-bar connected'; pulse.className='live-pulse on';
+    status.className='live-status on'; status.textContent='Bridge connected — waiting for ESP32...';
+    if (manualRow) { manualRow.style.opacity='1'; manualRow.style.pointerEvents='auto'; }
+    if (manualHint) manualHint.style.display='none';
+  } else {
+    bar.className='live-bar'; pulse.className='live-pulse';
+    status.className='live-status'; status.textContent='ESP32 not connected';
+    reads.style.display='none';
+    if (manualRow) { manualRow.style.opacity='1'; manualRow.style.pointerEvents='auto'; }
+    if (manualHint) manualHint.style.display='none';
+  }
+}
+
+function flashChip(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.remove('updated'); void el.offsetWidth; el.classList.add('updated');
+}
+
+function toggleAutoAnalyze() {
+  autoAnalyze = !autoAnalyze;
+  const btn=document.getElementById('btn-auto'), lbl=document.getElementById('auto-label');
+  btn.classList.toggle('on', autoAnalyze);
+  lbl.textContent = autoAnalyze ? 'ON' : 'OFF';
+  addLog('Auto-analyze ' + (autoAnalyze ? 'enabled' : 'disabled'), 'info');
+}
+
+function toggleLock() {
+  valuesLocked = !valuesLocked;
+  const btn = document.getElementById('btn-lock');
+  const ph  = document.getElementById('ph').value;
+  const tds = document.getElementById('tds').value;
+  if (valuesLocked) {
+    btn.textContent = '🔒 Locked: pH ' + ph + ' / ' + tds + ' ppm';
+    btn.classList.add('btn-lock-active');
+    addLog('Values locked at pH='+ph+' TDS='+tds+' ppm', 'ok');
+    document.getElementById('ph').style.color  = 'var(--safe)';
+    document.getElementById('tds').style.color = 'var(--safe)';
+  } else {
+    btn.textContent = '🔓 Lock Values';
+    btn.classList.remove('btn-lock-active');
+    addLog('Values unlocked — resuming live feed', 'info');
+    document.getElementById('ph').style.color  = '';
+    document.getElementById('tds').style.color = '';
+  }
+}
+
+function addLog(msg, type='info') {
+  const el = document.getElementById('live-log'); if (!el) return;
+  el.classList.add('on');
+  const now = new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  logLines.unshift({ msg, type, time: now });
+  if (logLines.length > 8) logLines.pop();
+  el.innerHTML = logLines.map(l=>`<div class="log-line ${l.type}">[${l.time}] ${l.msg}</div>`).join('');
+}
+
+function buildVerdict(ph, tds, wqi) {
+  let cls, icon, headline, sub;
+  if (wqi>=70&&ph>=6.5&&ph<=8.5&&tds<=500) { cls='vc-safe';icon='✅';headline='Safe to Use';sub='Water meets WHO & BIS standards. Suitable for drinking after basic disinfection.'; }
+  else if (wqi>=45) { cls='vc-warn';icon='⚠️';headline='Treatment Required';sub='Water is moderately contaminated. Multi-step purification needed before use.'; }
+  else { cls='vc-danger';icon='🚫';headline='Unsafe — Do Not Use';sub='Water is heavily contaminated. Mandatory multi-stage treatment before any human contact.'; }
+  const phColor  = ph>=6.5&&ph<=8.5?'var(--safe)':ph>=5.5&&ph<=9.5?'var(--amber)':'var(--rust)';
+  const tdsColor = tds<=300?'var(--safe)':tds<=500?'var(--safe)':tds<=1000?'var(--amber)':'var(--rust)';
+  const phPct    = Math.min(100,((ph<=7?ph/7:1-(ph-7)/7)*100));
+  const tdsPct   = Math.max(0,100-Math.min(100,(tds/2000)*100));
+  const wqiPct   = wqi;
+  document.getElementById('verdict-card').className = 'verdict-card ' + cls;
+  document.getElementById('verdict-card').style.display = 'block';
+  document.getElementById('verdict-card').innerHTML = `
+    <div class="verdict-top">
+      <div class="verdict-icon">${icon}</div>
+      <div>
+        <div class="verdict-headline" style="color:${cls==='vc-safe'?'var(--safe)':cls==='vc-warn'?'var(--amber)':'var(--rust)'}">${headline}</div>
+        <div class="verdict-sub">${sub}</div>
+      </div>
+    </div>
+    <div class="verdict-meters">
+      <div class="vm-item">
+        <div class="vm-label"><span>pH Safety</span><span style="color:${phColor}">${ph}</span></div>
+        <div class="vm-bar-track"><div class="vm-bar-fill" style="width:${phPct}%;background:${phColor}"></div></div>
+        <div class="vm-val" style="color:${phColor}">${ph>=6.5&&ph<=8.5?'Safe Range':'Out of Range'}</div>
+      </div>
+      <div class="vm-item">
+        <div class="vm-label"><span>TDS Purity</span><span style="color:${tdsColor}">${tds} ppm</span></div>
+        <div class="vm-bar-track"><div class="vm-bar-fill" style="width:${tdsPct}%;background:${tdsColor}"></div></div>
+        <div class="vm-val" style="color:${tdsColor}">${tds<=500?'Within Limit':'Exceeds Limit'}</div>
+      </div>
+      <div class="vm-item">
+        <div class="vm-label"><span>Water Quality Index</span><span style="color:${wqi>=70?'var(--safe)':wqi>=50?'var(--amber)':'var(--rust)'}">${wqi}/100</span></div>
+        <div class="vm-bar-track"><div class="vm-bar-fill" style="width:${wqiPct}%;background:linear-gradient(90deg,var(--rust),var(--amber),var(--safe));"></div></div>
+        <div class="vm-val" style="color:${wqi>=70?'var(--safe)':wqi>=50?'var(--amber)':'var(--rust)'}">${wqi>=70?'Good':wqi>=50?'Moderate':'Poor'}</div>
+      </div>
+      <div class="vm-item">
+        <div class="vm-label"><span>Drinkability</span></div>
+        <div class="vm-bar-track"><div class="vm-bar-fill" style="width:${wqiPct}%;background:${wqi>=70?'var(--safe)':wqi>=50?'var(--amber)':'var(--rust)'}"></div></div>
+        <div class="vm-val" style="color:${wqi>=70?'var(--safe)':wqi>=50?'var(--amber)':'var(--rust)'}">${wqi>=80?'Drinkable':wqi>=60?'After Treatment':'Not Drinkable'}</div>
+      </div>
+    </div>`;
+}
+
+function buildCostCard(ph, tds, wqi) {
+  const card = document.getElementById('costcard'); card.style.display='block';
+  let stages = [];
+  if (['Pond Water','River Water','Lake Water','Industrial Runoff'].includes(source)) stages.push({name:'Coagulation',costPer1000:8});
+  if (ph<6.5||ph>8.5) stages.push({name:'pH Correction',costPer1000:5});
+  if (tds>500&&tds<=1000) stages.push({name:'Carbon Filtration',costPer1000:12});
+  if (tds>1000) stages.push({name:'RO Treatment',costPer1000:45});
+  stages.push({name:'UV Disinfection',costPer1000:6}); stages.push({name:'Sand Filtration',costPer1000:4});
+  const totalPer1000 = stages.reduce((a,s)=>a+s.costPer1000,0);
+  const annualLitres = scale==='large'?365000:1095;
+  const annualCost   = (totalPer1000/1000)*annualLitres;
+  const medSaving    = scale==='large'?annualCost*14:12000;
+  document.getElementById('cost-tiles').innerHTML =
+    `<div class="cost-tile"><div class="cost-tile-icon">⚗️</div><div class="cost-tile-val">${stages.length}</div><div class="cost-tile-label">Treatment Stages</div></div>
+     <div class="cost-tile"><div class="cost-tile-icon">💧</div><div class="cost-tile-val">₹${totalPer1000}</div><div class="cost-tile-label">Per 1,000 L</div></div>
+     <div class="cost-tile"><div class="cost-tile-icon">📅</div><div class="cost-tile-val">₹${Math.round(annualCost).toLocaleString('en-IN')}</div><div class="cost-tile-label">Annual Cost Est.</div></div>
+     <div class="cost-tile"><div class="cost-tile-icon">🏥</div><div class="cost-tile-val">₹${Math.round(medSaving).toLocaleString('en-IN')}</div><div class="cost-tile-label">Medical Cost Saved</div></div>`;
+}
+
+function calcCost() {
+  const vol=parseFloat(document.getElementById('cost-vol').value)||1000;
+  const ph=parseFloat(document.getElementById('ph').value)||7;
+  const tds=parseFloat(document.getElementById('tds').value)||300;
+  let c=10;
+  if (['Pond Water','River Water','Lake Water','Industrial Runoff'].includes(source)) c+=8;
+  if (ph<6.5||ph>8.5) c+=5;
+  if (tds>500&&tds<=1000) c+=12;
+  if (tds>1000) c+=45;
+  const totalCost=Math.round((c/1000)*vol);
+  const el=document.getElementById('cost-result'); el.className='cost-result on';
+  el.innerHTML=`<strong style="color:var(--teal)">For ${vol.toLocaleString('en-IN')} litres:</strong><br>
+    Estimated treatment cost: <strong style="color:var(--safe)">₹${totalCost.toLocaleString('en-IN')}</strong><br>
+    Breakdown: ₹${c}/1,000 L × ${vol.toLocaleString('en-IN')} L<br>
+    <span style="color:var(--muted)">Untreated illness cost (annual): <strong style="color:var(--rust)">~₹12,000–15,000</strong> per household</span>`;
+}
+
+function addToHistory(ph,tds,wqi,src) {
+  const now=new Date();
+  const t=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · '+now.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  scanHistory.unshift({ph,tds,wqi,src:src||source,scale,time:t,id:Date.now()});
+  if (scanHistory.length>20) scanHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const el=document.getElementById('history-list');
+  document.getElementById('hist-count').textContent=scanHistory.length+' scan'+(scanHistory.length!==1?'s':'');
+  if (!scanHistory.length) { el.innerHTML='<div class="history-empty">No scans yet — run your first analysis above ↑</div>'; return; }
+  el.innerHTML='<div class="history-list">'+scanHistory.map((s,i)=>{
+    const phCls=s.ph>=6.5&&s.ph<=8.5?'hi-ph-good':s.ph>=5.5&&s.ph<=9.5?'hi-ph-warn':'hi-ph-bad';
+    const tdsCls=s.tds<=500?'hi-tds-good':s.tds<=1000?'hi-tds-warn':'hi-tds-bad';
+    const wqiCol=s.wqi>=70?'var(--safe)':s.wqi>=50?'var(--amber)':'var(--rust)';
+    return `<div class="history-item" onclick="reloadScan(${i})">
+      <div class="hi-num">#${scanHistory.length-i}</div>
+      <div class="hi-source">${s.src} · ${s.scale==='large'?'🏭 Large':'🚰 Small'}</div>
+      <div class="hi-vals">
+        <span class="hi-val ${phCls}">pH ${s.ph}</span>
+        <span class="hi-val ${tdsCls}">${s.tds} ppm</span>
+        <span class="hi-val" style="background:var(--paper2);color:${wqiCol}">WQI ${s.wqi}</span>
+      </div>
+      <div class="hi-time">${s.time}</div></div>`;
+  }).join('')+'</div>';
+}
+
+function reloadScan(idx) {
+  const s=scanHistory[idx];
+  document.getElementById('ph').value=s.ph; document.getElementById('tds').value=s.tds;
+  scale=s.scale;
+  document.getElementById('sc-large').classList.toggle('on',s.scale==='large');
+  document.getElementById('sc-small').classList.toggle('on',s.scale==='small');
+  document.querySelectorAll('.pill').forEach(p=>{ if(p.textContent.trim().toLowerCase().includes(s.src.split(' ')[0].toLowerCase())) p.click(); });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearHistory() { scanHistory=[]; renderHistory(); }
+function pickScale(s) { scale=s; document.getElementById('sc-large').classList.toggle('on',s==='large'); document.getElementById('sc-small').classList.toggle('on',s==='small'); }
+function pick(el,s) { document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on')); el.classList.add('on'); source=s; }
+function preset(ph,tds,src,srcLabel) { document.getElementById('ph').value=ph; document.getElementById('tds').value=tds; document.querySelectorAll('.pill').forEach(p=>{ if(p.textContent.trim()===srcLabel) p.click(); }); }
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+function phStatus(v) {
+  if (v>=6.5&&v<=8.5) return {lbl:'Safe',cls:'s-safe',col:'var(--safe)'};
+  if ((v>=6.0&&v<6.5)||(v>8.5&&v<=9.5)) return {lbl:'Moderate',cls:'s-mild',col:'var(--amber)'};
+  return {lbl:'Unsafe',cls:'s-poor',col:'var(--rust)'};
+}
+function tdsStatus(v) {
+  if (v<=300) return {lbl:'Excellent',cls:'s-safe',col:'var(--safe)'};
+  if (v<=500) return {lbl:'Good',cls:'s-safe',col:'var(--safe)'};
+  if (v<=1000) return {lbl:'Moderate',cls:'s-mild',col:'var(--amber)'};
+  if (v<=2000) return {lbl:'Poor',cls:'s-poor',col:'var(--rust)'};
+  return {lbl:'Critical',cls:'s-crit',col:'var(--rust)'};
+}
+
+function buildGauges(ph, tds) {
+  const ps=phStatus(ph), ts=tdsStatus(tds);
+  const phPct=(ph/14)*100, tdsPct=clamp((tds/2500)*100,0,100);
+  const R=56,C=2*Math.PI*R;
+  function ring(pct,c1,c2,gid) {
+    const d=clamp(pct,2,99)/100*C;
+    return `<svg viewBox="0 0 140 140" width="130" height="130" style="transform:rotate(-90deg)">
+      <defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs>
+      <circle cx="70" cy="70" r="${R}" fill="none" stroke="#e8e3da" stroke-width="10"/>
+      <circle cx="70" cy="70" r="${R}" fill="none" stroke="url(#${gid})" stroke-width="10" stroke-dasharray="${d} ${C-d}" stroke-linecap="round"/>
+    </svg>`;
+  }
+  return `
+  <div class="gauge-card">
+    <div class="gc-label">pH Level</div>
+    <div class="gc-ring">
+      ${ring(phPct,'#1a6b3c','#0d7377','phg')}
+      <div class="gc-center"><div class="gc-value" style="color:${ps.col}">${ph}</div><div class="gc-unit">pH</div></div>
+    </div>
+    <div class="gc-status ${ps.cls}">● ${ps.lbl}</div>
+  </div>
+  <div class="gauge-card">
+    <div class="gc-label">Total Dissolved Solids</div>
+    <div class="gc-ring">
+      ${ring(tdsPct,'#0d7377','#d4861a','tdsg')}
+      <div class="gc-center"><div class="gc-value" style="color:${ts.col}">${tds}</div><div class="gc-unit">ppm</div></div>
+    </div>
+    <div class="gc-status ${ts.cls}">● ${ts.lbl}</div>
+  </div>`;
+}
+
+function calcWQI(ph,tds) {
+  let s=100;
+  const d=Math.abs(ph-7.0);
+  if (d>0) s-=Math.min(35,d*9);
+  if (tds>500)  s-=Math.min(30,((tds-500)/500)*25);
+  if (tds>1000) s-=Math.min(20,((tds-1000)/1000)*20);
+  if (tds>2000) s-=15;
+  return Math.max(0,Math.round(s));
+}
+
+function wqiVerdict(s) {
+  if (s>=90) return ['var(--safe)',   'Excellent — safe for drinking with minimal treatment.'];
+  if (s>=70) return ['var(--safe)',   'Good — minor treatment recommended before consumption.'];
+  if (s>=50) return ['var(--amber)',  'Moderate — multi-step treatment required. Not for direct drinking.'];
+  if (s>=30) return ['var(--amber)',  'Poor — significant purification needed. Agricultural use only until treated.'];
+  return ['var(--rust)', 'Critical — heavily contaminated. Multiple purification stages mandatory.'];
+}
+
+function buildWQI(ph,tds) {
+  const score=calcWQI(ph,tds), pct=score;
+  const [col,verdict]=wqiVerdict(score);
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div class="sec-label" style="margin-bottom:0;">Water Quality Index</div>
+      <div id="scale-badge" style="font-family:var(--font-mono);font-size:0.58rem;padding:4px 10px;border-radius:3px;"></div>
+    </div>
+    <div class="wqi-row">
+      <div class="wqi-score-box">
+        <div class="wqi-num" style="color:${col}">${score}</div>
+        <div class="wqi-label">OUT OF 100</div>
+      </div>
+      <div class="wqi-track-wrap">
+        <div class="wqi-track-label"><span>Critical</span><span>Moderate</span><span>Excellent</span></div>
+        <div class="wqi-track"><div class="wqi-needle" style="left:${pct}%"></div></div>
+        <div class="wqi-verdict" style="color:${col};margin-top:10px;"><strong>${verdict}</strong></div>
+      </div>
+    </div>`;
+}
+
+async function go() {
+  if (isAnalyzing) return;
+  isAnalyzing = true;
+  if (isConnected && lastLivePH !== null && lastLiveTDS !== null) {
+    document.getElementById('ph').value  = lastLivePH;
+    document.getElementById('tds').value = lastLiveTDS;
+  }
+  const ph  = parseFloat(document.getElementById('ph').value);
+  const tds = parseFloat(document.getElementById('tds').value);
+  if (isNaN(ph)||isNaN(tds)) { alert('Please enter both pH and TDS values, or connect your ESP32.'); isAnalyzing=false; return; }
+  const btn = document.getElementById('abtn');
+  btn.disabled=true; btn.textContent='Analyzing...';
+  document.getElementById('results').classList.add('on');
+  const wqi=calcWQI(ph,tds);
+  buildVerdict(ph,tds,wqi);
+  buildCostCard(ph,tds,wqi);
+  addToHistory(ph,tds,wqi,source);
+  document.getElementById('gauges').innerHTML=buildGauges(ph,tds);
+  document.getElementById('wqicard').innerHTML=buildWQI(ph,tds);
+  const sbEl=document.getElementById('scale-badge');
+  if (sbEl) {
+    if (scale==='large') { sbEl.textContent='🏭 Large Scale · 1,000+ L'; sbEl.style.cssText='font-family:var(--font-mono);font-size:0.58rem;padding:4px 10px;border-radius:3px;background:var(--teal-lt);color:var(--teal);border:1px solid var(--teal-md);'; }
+    else { sbEl.textContent='🚰 Small Scale · Household'; sbEl.style.cssText='font-family:var(--font-mono);font-size:0.58rem;padding:4px 10px;border-radius:3px;background:var(--safe-lt);color:var(--safe);border:1px solid var(--safe-md);'; }
+  }
+  document.getElementById('aout').innerHTML='';
+  document.getElementById('dots').style.display='flex';
+  const scaleLabel = scale==='large'?'Large Scale (1,000+ Litres — Agricultural/Industrial/Municipal)':'Small Scale (Under 1,000 Litres — Household/Drinking/Cooking/Lab)';
+  const prompt = `You are AquaSense AI, an advanced water quality intelligence engine. Analyze the water sample below and produce a comprehensive, professional, expert-level HTML report. Be specific, cite real-world statistics, reference global water crisis data, and provide innovative ideas.
+
+SAMPLE DATA:
+- Water Source: ${source}
+- pH: ${ph} (safe range 6.5–8.5; neutral = 7.0)
+- TDS: ${tds} ppm (WHO drinking limit: 500 ppm; acceptable: up to 1000 ppm)
+- Water Quality Index (computed): ${wqi}/100
+- Analysis Scale: ${scaleLabel}
+- No turbidity sensor — estimate qualitatively from source and TDS level.
+
+RESPOND WITH ONLY CLEAN HTML FRAGMENTS. No markdown, no backticks, no preamble. Use the structure below exactly.
+
+<!-- BLOCK 1: Real-World Context & Assessment -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🌍</span> REAL-WORLD WATER CRISIS CONTEXT</div>
+<div class="assessment-text">
+[Write 3-4 sentences connecting THIS water sample to real-world global/Indian water problems. Include real statistics. Relate the pH=${ph} and TDS=${tds} ppm readings directly to what problems this kind of water causes. Use <strong> for key facts. Use hl-good/hl-warn/hl-bad spans for values.]
+</div>
+</div>
+
+<!-- BLOCK 2: Alert -->
+[Insert ONE alert div based on safety:
+- If unsafe: <div class="alert a-bad"><div class="alert-icon">⚠️</div><div>Specific risk message with actual values</div></div>
+- If borderline: <div class="alert a-warn"><div class="alert-icon">⚠️</div><div>Caution message</div></div>
+- If safe: <div class="alert a-good"><div class="alert-icon">✅</div><div>Positive confirmation with values</div></div>]
+
+<!-- BLOCK 3: Purification Protocol -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">⚗️</span> PURIFICATION PROTOCOL — ${scale==='large'?'LARGE SCALE (1,000+ L)':'SMALL SCALE (HOUSEHOLD)'}</div>
+<div class="step-list">
+[Generate 6 purification steps TAILORED TO THE SCALE addressing actual pH=${ph} and TDS=${tds}. Format:
+<div class="step"><div class="step-badge sb1">01</div><div class="step-info"><div class="step-name">Name <span class="step-tag t-chem">CHEMICAL</span></div><div class="step-desc">Detailed explanation with values and expected outcomes.</div></div></div>
+Use sb1-sb6 for priorities. Tags: t-chem, t-phys, t-bio, t-elec.]
+</div>
+</div>
+
+<!-- BLOCK 4: Use Cases -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">💡</span> ${scale==='large'?'LARGE-SCALE WATER DEPLOYMENT':'HOUSEHOLD & PERSONAL APPLICATIONS'}</div>
+<div class="uc-grid">
+[Generate 6 uc-tile divs SPECIFIC TO THE SCALE. Format:
+<div class="uc-tile"><div class="uc-emoji">🌾</div><div class="uc-text"><strong>Use Name</strong><span>Suitability condition</span></div></div>]
+</div>
+</div>
+
+<!-- BLOCK 5: Standards Table -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">📊</span> PARAMETER BENCHMARKING vs GLOBAL STANDARDS</div>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Parameter</th><th>Measured Value</th><th>WHO Standard</th><th>BIS India</th><th>EPA (USA)</th><th>Verdict</th></tr></thead>
+<tbody>
+[Row for pH with tv-good/tv-warn/tv-bad on measured value]
+[Row for TDS]
+[Row for WQI ${wqi}/100]
+</tbody>
+</table></div>
+</div>
+
+<!-- BLOCK 6: Innovative Solutions -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🚀</span> INNOVATIVE SOLUTIONS & FUTURE UPGRADES</div>
+<div class="insight">[5-6 cutting-edge ideas relevant to pH=${ph}/TDS=${tds}. Use <strong> for technique names. Flowing paragraph text.]</div>
+</div>
+
+<!-- BLOCK 7: Chemical Dosing -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🧪</span> CHEMICAL DOSING — ${scale==='large'?'PER 10,000 LITRES':'PER 100 LITRES'}</div>
+<div class="insight">[Precise dosing for pH=${ph} and TDS=${tds}. Use <strong> for chemical names and doses.]</div>
+</div>
+
+<!-- BLOCK 8: Health Risk -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🩺</span> HEALTH RISK ANALYSIS & DISEASE PROFILE</div>
+<div class="assessment-text">[Detailed health risk profile for pH=${ph} and TDS=${tds}. Cover diseases, at-risk demographics, WHO statistics, chronic vs acute risks. Use <strong> for disease names.]</div>
+</div>
+
+<!-- BLOCK 9: Economic Impact -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">💰</span> ECONOMIC IMPACT & COST-BENEFIT ANALYSIS</div>
+<div class="insight">[Real economic analysis with Indian rupee estimates. Treatment cost vs prevented losses. Mention Jal Jeevan Mission, AMRUT 2.0, NRCP.]</div>
+</div>
+
+<!-- BLOCK 10: Predictive Forecast -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🔮</span> AI PREDICTIVE WATER QUALITY FORECAST</div>
+<div class="assessment-text">[Predict how this water quality changes over time without intervention. Seasonal variation, long-term trends, climate change impact for ${source}. Use <strong> for time estimates.]</div>
+</div>
+
+<!-- BLOCK 11: IoT Blueprint -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">📡</span> IoT SMART MONITORING SYSTEM BLUEPRINT</div>
+<div class="insight">[Complete IoT system design with sensor upgrades, ESP32, cloud platform, alert system, costs in INR.]</div>
+</div>
+
+<!-- BLOCK 12: Nature-Based Solutions -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">🌿</span> NATURE-BASED & BIOMIMICRY PURIFICATION</div>
+<div class="insight">[4-5 nature-inspired methods. Moringa, bamboo charcoal, vetiver, SODIS etc. With effectiveness % and costs.]</div>
+</div>
+
+<!-- BLOCK 13: Circular Economy -->
+<div class="out-block">
+<div class="out-title"><span class="ot-icon">♻️</span> ZERO-WASTE CIRCULAR WATER ECONOMY PLAN</div>
+<div class="insight">[Zero-waste strategy for ${scale==='large'?'large scale':'household scale'} with pH=${ph}/TDS=${tds}.]</div>
+</div>`;
+
+  try {
+    const apiKey = window._AQ_KEY || '';
+    if (!apiKey || !apiKey.startsWith('sk-ant-')) throw new Error('No valid API key — showing built-in analysis.');
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({ model:'claude-sonnet-4-5', max_tokens:2500, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message||'API error');
+    const raw  = (data.content||[]).map(i=>i.text||'').join('');
+    if (!raw||raw.trim().length<10) throw new Error('Empty response');
+    const html = raw.replace(/```html?|```/g,'').trim();
+    document.getElementById('dots').style.display='none';
+    const el=document.getElementById('aout'); el.style.opacity='0'; el.innerHTML=html;
+    el.style.transition='opacity 0.3s ease'; requestAnimationFrame(()=>{el.style.opacity='1';});
+  } catch(e) {
+    document.getElementById('dots').style.display='none';
+    const el=document.getElementById('aout'); el.style.opacity='0'; el.innerHTML=fallback(ph,tds,wqi);
+    el.style.transition='opacity 0.3s ease'; requestAnimationFrame(()=>{el.style.opacity='1';});
+  }
+  btn.disabled=false; btn.textContent='Run Water Analysis';
+  isAnalyzing=false;
+  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
+function fallback(ph,tds,wqi) {
+  const ps=phStatus(ph), ts=tdsStatus(tds);
+  const steps=[];
+  if (['Pond Water','River Water','Lake Water','Industrial Runoff'].includes(source)) {
+    steps.push({n:'01',sb:'sb1',name:'Coagulation + Flocculation',tag:'t-chem',type:'CHEMICAL',desc:`Add Alum (Aluminium Sulphate) at <strong>10–15 mg/L</strong>. Stir vigorously for 2 min, then slowly for 15 min. Causes suspended particles to clump into flocs.`});
+    steps.push({n:'02',sb:'sb2',name:'Sedimentation + Gravity Filtration',tag:'t-phys',type:'PHYSICAL',desc:`Allow to settle for <strong>30–45 minutes</strong>. Decant through a <strong>3-layer sand-gravel-charcoal filter</strong>.`});
+  }
+  if (ph<6.5) steps.push({n:'0'+(steps.length+1),sb:'sb3',name:'pH Correction — Alkalization',tag:'t-chem',type:'CHEMICAL',desc:`pH <strong>${ph}</strong> is acidic. Add <strong>Hydrated Lime Ca(OH)₂ at ~3–6 mg/L per 1000 L</strong>. Recheck every 5 min until pH 6.5–7.5.`});
+  else if (ph>8.5) steps.push({n:'0'+(steps.length+1),sb:'sb3',name:'pH Correction — Acidification',tag:'t-chem',type:'CHEMICAL',desc:`pH <strong>${ph}</strong> is alkaline. Inject <strong>CO₂ at 2–4 mg/L</strong> or food-grade citric acid until pH 7.0–7.5.`});
+  if (tds>500) steps.push({n:'0'+(steps.length+1),sb:'sb4',name:'Activated Carbon Adsorption',tag:'t-phys',type:'PHYSICAL',desc:`TDS <strong>${tds} ppm</strong> exceeds WHO limit. Pass through <strong>activated carbon column (500g GAC per 10 L/hr)</strong>.`});
+  if (tds>900) steps.push({n:'0'+(steps.length+1),sb:'sb4',name:'Reverse Osmosis Filtration',tag:'t-phys',type:'PHYSICAL',desc:`TDS <strong>${tds} ppm</strong> is high. RO membrane reduces TDS by <strong>85–95%</strong>, targeting ~${Math.round(tds*0.1)}–${Math.round(tds*0.15)} ppm.`});
+  steps.push({n:'0'+(steps.length+1),sb:'sb5',name:'UV / Chlorine Disinfection',tag:'t-bio',type:'BIOLOGICAL',desc:`<strong>UV lamp at 254 nm for 30 seconds</strong> or <strong>0.2–0.5 mg/L Sodium Hypochlorite (NaOCl)</strong> with 30 min contact time.`});
+  steps.push({n:'0'+(steps.length+1),sb:'sb6',name:'Post-Treatment Quality Check',tag:'t-elec',type:'SENSOR',desc:`Re-read sensors. Target: <strong>pH 7.0–7.5, TDS &lt; 500 ppm</strong>. Log before/after values.`});
+  const usecases = tds>1000?[
+    {e:'🌱',t:'Agricultural Irrigation',d:'Safe for most crops post-coagulation'},
+    {e:'🏗️',t:'Construction',d:'Concrete mixing, brick curing, road work'},
+    {e:'🚿',t:'Industrial Sanitation',d:'Cleaning, cooling, equipment washing'},
+    {e:'🔥',t:'Fire Suppression',d:'Suitable for firefighting systems'},
+    {e:'♻️',t:'Greywater Reuse',d:'Toilet flushing, landscaping after treatment'},
+  ]:tds>500?[
+    {e:'🌱',t:'Drip Irrigation',d:'Vegetable and crop irrigation'},
+    {e:'🚿',t:'Domestic Cleaning',d:'Floor, vehicle, utensil washing'},
+    {e:'💊',t:'Pharma Grade (post-RO)',d:'After RO treatment, suitable for lab use'},
+    {e:'🏭',t:'Industrial Processes',d:'Boiler feed, cooling towers'},
+    {e:'🐟',t:'Aquaculture',d:'Fish farming with correct pH management'},
+  ]:[
+    {e:'🚰',t:'Drinking Water',d:'Safe for direct consumption after disinfection'},
+    {e:'🍳',t:'Cooking & Food Prep',d:'Suitable for all culinary applications'},
+    {e:'🌱',t:'Hydroponics',d:'Ideal low-TDS water for nutrient solution mixing'},
+    {e:'💊',t:'Pharmaceutical',d:'Meets basic purity for lab and pharma use'},
+    {e:'🐟',t:'Aquariums',d:'Excellent water quality for aquatic life'},
+    {e:'☕',t:'Beverages',d:'Good mineral balance for tea and coffee brewing'},
+  ];
+  return `
+  <div class="out-block">
+    <div class="out-title"><span class="ot-icon">🔬</span> WATER QUALITY ASSESSMENT</div>
+    <div class="assessment-text">
+      The ${source} sample shows <span class="${ph>=6.5&&ph<=8.5?'hl-good':ph>=6.0&&ph<=9.0?'hl-warn':'hl-bad'}">pH ${ph}</span> — ${ps.lbl.toLowerCase()} — and
+      <span class="${tds<=500?'hl-good':tds<=1000?'hl-warn':'hl-bad'}">TDS ${tds} ppm</span> — ${ts.lbl.toLowerCase()} quality.
+      ${ph<6.5?`Acidic pH can leach heavy metals from pipes.`:ph>8.5?`Alkaline pH indicates excessive mineral loading.`:`pH is within WHO-recommended range.`}
+      ${tds>1000?`TDS of ${tds} ppm significantly exceeds the WHO limit of 500 ppm.`:tds>500?`TDS slightly exceeds WHO limit — RO or ion-exchange treatment advised.`:`TDS is within safe drinking water standards.`}
+      Computed Water Quality Index: <strong>${wqi}/100</strong>.
+    </div>
+  </div>
+  ${(ph<6.5||ph>9.0||tds>1000)?
+    `<div class="alert a-bad"><div class="alert-icon">⚠️</div><div><strong>Warning:</strong> Water with pH ${ph} and TDS ${tds} ppm is NOT safe for consumption without multi-stage treatment.</div></div>`:
+    (tds>500||ph<6.5||ph>8.5)?
+    `<div class="alert a-warn"><div class="alert-icon">⚠️</div><div><strong>Caution:</strong> Basic treatment required. pH or TDS is outside optimal range.</div></div>`:
+    `<div class="alert a-good"><div class="alert-icon">✅</div><div><strong>Good news:</strong> pH ${ph} and TDS ${tds} ppm are within safe parameters. Disinfection still recommended.</div></div>`
+  }
+  <div class="out-block">
+    <div class="out-title"><span class="ot-icon">⚗️</span> PURIFICATION PROTOCOL</div>
+    <div class="step-list">${steps.map(s=>`<div class="step"><div class="step-badge ${s.sb}">${s.n}</div><div class="step-info"><div class="step-name">${s.name} <span class="step-tag ${s.tag}">${s.type}</span></div><div class="step-desc">${s.desc}</div></div></div>`).join('')}</div>
+  </div>
+  <div class="out-block">
+    <div class="out-title"><span class="ot-icon">💡</span> APPLICATIONS OF PURIFIED WATER</div>
+    <div class="uc-grid">${usecases.map(u=>`<div class="uc-tile"><div class="uc-emoji">${u.e}</div><div class="uc-text"><strong>${u.t}</strong><span>${u.d}</span></div></div>`).join('')}</div>
+  </div>
+  <div class="out-block">
+    <div class="out-title"><span class="ot-icon">📊</span> PARAMETER BENCHMARKING</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Parameter</th><th>Your Reading</th><th>WHO Standard</th><th>BIS (India)</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>pH</td><td class="${ph>=6.5&&ph<=8.5?'tv-good':ph>=6.0&&ph<=9.0?'tv-warn':'tv-bad'}">${ph}</td><td>6.5 – 8.5</td><td>6.5 – 8.5</td><td>${ph>=6.5&&ph<=8.5?'✅ Safe':'⚠️ Needs correction'}</td></tr>
+        <tr><td>TDS</td><td class="${tds<=500?'tv-good':tds<=1000?'tv-warn':'tv-bad'}">${tds} ppm</td><td>500 ppm</td><td>500 ppm (max 2000)</td><td>${tds<=500?'✅ Excellent':tds<=1000?'⚠️ Moderate':'❌ Exceeds limit'}</td></tr>
+        <tr><td>WQI Score</td><td class="${wqi>=70?'tv-good':wqi>=50?'tv-warn':'tv-bad'}">${wqi}/100</td><td>≥ 70 (Good)</td><td>≥ 65 (Acceptable)</td><td>${wqi>=70?'✅ Good':wqi>=50?'⚠️ Moderate':'❌ Poor'}</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="out-block">
+    <div class="out-title"><span class="ot-icon">🩺</span> HEALTH RISK ANALYSIS</div>
+    <div class="assessment-text">
+      ${ph<6.5?'<strong>Acidic water (pH '+ph+')</strong> can leach <span class="hl-bad">lead, copper and iron</span> from pipes causing neurological damage especially in children.':ph>8.5?'<strong>Alkaline water (pH '+ph+')</strong> can cause <span class="hl-warn">gastrointestinal irritation</span> and metabolic alkalosis.':'<strong>pH '+ph+'</strong> is within safe range — <span class="hl-good">no pH-related health risks</span> detected.'}
+      ${tds>1000?'<br><br><strong>High TDS ('+tds+' ppm)</strong> indicates dangerous dissolved minerals — potential <span class="hl-bad">arsenic, nitrates, fluoride or heavy metals</span>.':tds>500?'<br><br><strong>TDS '+tds+' ppm</strong> exceeds safe limit — <span class="hl-warn">elevated mineral intake</span>. Long-term consumption may cause kidney stones.':'<br><br><strong>TDS '+tds+' ppm</strong> is within safe limits — <span class="hl-good">mineral content acceptable</span>.'}
+    </div>
+  </div>`;
+}
+
+(function(){
+  try {
+    const k=localStorage.getItem('aqk');
+    if (k) {
+      window._AQ_KEY=k;
+      const inp=document.getElementById('apikey');
+      if (inp) {
+        inp.value=k;
+        const v=k.startsWith('sk-ant-')&&k.length>20;
+        const s=document.getElementById('kstat');
+        if (s) { s.textContent=v?'✅ Set':'⚠️ Check'; s.style.color=v?'var(--safe)':'var(--amber)'; }
+      }
+    }
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
